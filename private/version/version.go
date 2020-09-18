@@ -4,6 +4,8 @@
 package version
 
 import (
+	"strings"
+
 	"github.com/zeebo/errs"
 
 	"storj.io/common/useragent"
@@ -25,6 +27,7 @@ func AppendVersionToUserAgent(useragentStr string) (string, error) {
 			return "", errs.New("invalid user agent: %w", err)
 		}
 	}
+	version = strings.Trim(version, `()`)
 	entries = append(entries, useragent.Entry{
 		Product: "uplink",
 		Version: version,

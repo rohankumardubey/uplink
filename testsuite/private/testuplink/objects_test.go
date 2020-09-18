@@ -22,6 +22,7 @@ import (
 	"storj.io/common/testcontext"
 	"storj.io/common/testrand"
 	"storj.io/storj/private/testplanet"
+	"storj.io/uplink/private/eestream/scheduler"
 	"storj.io/uplink/private/metaclient"
 	"storj.io/uplink/private/storage/streams"
 	"storj.io/uplink/private/stream"
@@ -127,12 +128,20 @@ func upload(ctx context.Context, t *testing.T, db *metaclient.DB, streams *strea
 	str, err := obj.CreateStream(ctx)
 	require.NoError(t, err)
 
-	upload := stream.NewUpload(ctx, str, streams)
+	sched := scheduler.New(scheduler.Options{
+		DurationBuffer:    0,
+		InitialDuration:   0,
+		InitialConcurrent: 200,
+		MaximumConcurrent: 200,
+	})
+
+	upload, err := streams.PutWriter(ctx, str.BucketName(), str.Path(), str, str.Expires(), sched)
+	require.NoError(t, err)
 
 	_, err = upload.Write(data)
 	require.NoError(t, err)
 
-	err = upload.Close()
+	err = upload.Commit()
 	require.NoError(t, err)
 }
 

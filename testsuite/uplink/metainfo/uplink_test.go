@@ -6,6 +6,7 @@ package metainfo_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"storj.io/common/memory"
@@ -27,7 +28,7 @@ func TestMultisegmentUploadWithLastInline(t *testing.T) {
 		satellite := planet.Satellites[0]
 		uplink := planet.Uplinks[0]
 
-		expectedData := testrand.Bytes(40 * memory.KiB)
+		expectedData := testrand.Bytes(40*memory.KiB + 1)
 
 		err := planet.Uplinks[0].Upload(ctx, planet.Satellites[0], "testbucket", "test/path", expectedData)
 		require.NoError(t, err)
@@ -48,8 +49,15 @@ func TestMultisegmentUploadWithLastInline(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, 3, len(segments))
-		// TODO we should check 2 segments to be remote and last one to be inline
-		// but main satellite implementation doens't give such info at the moment
+
+		assert.EqualValues(t, segments[0].PlainSize, 20*memory.KiB)
+		assert.Empty(t, segments[0].InlineData)
+
+		assert.EqualValues(t, segments[1].PlainSize, 20*memory.KiB)
+		assert.Empty(t, segments[1].InlineData)
+
+		assert.EqualValues(t, segments[2].PlainSize, 1)
+		assert.NotEmpty(t, segments[2].InlineData)
 	})
 }
 

@@ -368,6 +368,11 @@ func TestContextCancelUpload(t *testing.T) {
 		SatelliteCount:   1,
 		StorageNodeCount: 4,
 		UplinkCount:      1,
+		Reconfigure: testplanet.Reconfigure{
+			Satellite: func(log *zap.Logger, index int, config *satellite.Config) {
+				testplanet.MaxSegmentSize(20*memory.KiB)(log, index, config)
+			},
+		},
 	}, func(t *testing.T, ctx *testcontext.Context, planet *testplanet.Planet) {
 		project := openProject(t, ctx, planet)
 		defer ctx.Check(project.Close)
@@ -380,7 +385,7 @@ func TestContextCancelUpload(t *testing.T) {
 		require.NoError(t, err)
 		assertObjectEmptyCreated(t, upload.Info(), "test.dat")
 
-		randData := testrand.Bytes(10 * memory.KiB)
+		randData := testrand.Bytes(15 * memory.KiB)
 		_, err = upload.Write(randData)
 		require.NoError(t, err)
 		assertObjectEmptyCreated(t, upload.Info(), "test.dat")

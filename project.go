@@ -12,6 +12,7 @@ import (
 	"storj.io/common/rpc"
 	"storj.io/common/storj"
 	"storj.io/uplink/private/ecclient"
+	"storj.io/uplink/private/eestream/scheduler"
 	"storj.io/uplink/private/metaclient"
 	"storj.io/uplink/private/storage/streams"
 	"storj.io/uplink/private/testuplink"
@@ -20,6 +21,15 @@ import (
 
 // TODO we need find a way how to pass it from satellite to client.
 const maxInlineSize = 4096 // 4KiB
+
+var (
+	defaultSchedulerOpts = scheduler.Options{
+		DurationBuffer:    0,
+		InitialDuration:   0,
+		InitialConcurrent: 200,
+		MaximumConcurrent: 200,
+	}
+)
 
 // maxSegmentSize can be used to override max segment size with ldflags build parameter.
 // Example: go build -ldflags "-X 'storj.io/uplink.maxSegmentSize=1MiB'" storj.io/storj/cmd/uplink.
@@ -33,6 +43,7 @@ type Project struct {
 	ec                   ecclient.Client
 	segmentSize          int64
 	encryptionParameters storj.EncryptionParameters
+	scheduler            *scheduler.Scheduler
 }
 
 // OpenProject opens a project with the specific access grant.
@@ -107,6 +118,8 @@ func (config Config) OpenProject(ctx context.Context, access *Access) (project *
 		ec:                   ec,
 		segmentSize:          segmentsSize,
 		encryptionParameters: encryptionParameters,
+		// TODO: allow scheduler opts to be configured
+		scheduler: scheduler.New(defaultSchedulerOpts),
 	}, nil
 }
 

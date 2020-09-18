@@ -15,7 +15,6 @@ import (
 
 	"storj.io/common/pb"
 	"storj.io/uplink/private/storage/streams"
-	"storj.io/uplink/private/stream"
 )
 
 // ErrUploadDone is returned when either Abort or Commit has already been called.
@@ -100,7 +99,14 @@ func (project *Project) UploadObject(ctx context.Context, bucket, key string, op
 	}
 
 	upload.streams = streams
-	upload.upload = stream.NewUpload(ctx, mutableStream, streams)
+	upload.upload, err = streams.PutWriter(ctx,
+		mutableStream.BucketName(),
+		mutableStream.Path(),
+		mutableStream,
+		mutableStream.Expires(), project.scheduler)
+	if err != nil {
+		return nil, err
+	}
 
 	return upload, nil
 }
@@ -119,7 +125,7 @@ type Upload struct {
 	closed  bool
 	aborted bool
 	cancel  context.CancelFunc
-	upload  *stream.Upload
+	upload  *streams.Upload
 	bucket  string
 	object  *Object
 	streams *streams.Store
@@ -171,7 +177,7 @@ func (upload *Upload) Commit() error {
 	upload.closed = true
 
 	err := errs.Combine(
-		upload.upload.Close(),
+		upload.upload.Commit(),
 		upload.streams.Close(),
 	)
 	upload.stats.flagFailure(err)

@@ -311,8 +311,8 @@ func (s *Store) Put(ctx context.Context, bucket, unencryptedKey string, data io.
 		return Meta{}, errs.Wrap(err)
 	}
 
-	// TODO: Do we still need to set SegmentsSize and LastSegmentSize
-	// for backward compatibility with old uplinks?
+	// We still need SegmentsSize and LastSegmentSize for backward
+	// compatibility with old uplinks.
 	streamInfo, err := pb.Marshal(&pb.StreamInfo{
 		SegmentsSize:    s.segmentSize,
 		LastSegmentSize: lastSegmentSize,
